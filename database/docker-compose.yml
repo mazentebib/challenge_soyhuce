@@ -1,8 +1,8 @@
-version: "3.8"
+version: "3.9"
 
 services:
-  movies-db:
-    image: movies-db:latest
+  movies_db:
+    image: movies_db:latest
     ports:
       - "5432:5432"
     environment:
@@ -11,6 +11,12 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
       - ./pgdata:/var/lib/postgresql/data
+    networks:
+      - my-network
 
 volumes:
   pgdata: {}
+
+networks:
+  my-network:
+    driver: bridge

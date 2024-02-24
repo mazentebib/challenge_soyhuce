@@ -2,9 +2,13 @@ import requests
 import json
 import time
 import os
+import dotenv
+from psycopg2 import connect, Error
+from const import TOP_MOVIES_TABLE_DEFINITION, GENRES_TABLE_DEFINITION, GENRES_MOVIES_TABLE_DEFINITION
+from sql_functions import sqlManager
 
 # Replace with your actual TMDB API key
-API_KEY = "8341ad44a87f2c65829622f523b0e559"
+API_KEY = os.getenv("TMDB_API_KEY")
 
 # Ensure API key is set
 if not API_KEY:
@@ -21,17 +25,11 @@ NUM_MOVIES = 500
 RESULTS_PER_PAGE = 20
 PAGES = NUM_MOVIES // RESULTS_PER_PAGE + 1
 
-# Target directory and filename
-OUTPUT_DIR = "./data/"
-OUTPUT_FILE_MOVIES = "top_movies.json"
-OUTPUT_FILE_GENRES = "genres.json"
-OUTPUT_FILE_MG = "mg.json"
-def save_data_to_json(data, output_dir, output_file):
-    """Saves formatted movie data to a JSON file."""
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    with open(os.path.join(output_dir, output_file), "w") as f:
-        json.dump(data, f, indent=4)
+DB_HOST = os.getenv("POSTGRES_HOST")
+DB_NAME = os.getenv("POSTGRES_DB")
+DB_USER = os.getenv("POSTGRES_USER")
+DB_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+
 
 def get_all_movie_data():
     """Retrieves and returns all movie data from the API."""
@@ -51,8 +49,9 @@ def get_all_movie_data():
 
     return movies
 
+
 def clean_data(data, desired_columns):
-    """Cleans and extracts specific columns from movie data."""
+    """Cleans and extracts specific columns from movie data"""
     cleaned_data = []
 
     for movie in data:
@@ -72,7 +71,7 @@ def split_data_into_tables(cleaned_data):
         movies.append({
             "id": movie_id,
             "original_language": movie.get("original_language"),
-            "original_title": movie.get("original_title"),
+            " kl": movie.get("original_title"),
             "overview": movie.get("overview"),
             "popularity": movie.get("popularity"),
             "release_date": movie.get("release_date"),
@@ -98,11 +97,6 @@ def get_all_genres():
         print(f"Error retrieving genres: {response.status_code}")
         return []
 
-def save_genres_to_json(genres):
-    """Saves genre data to a JSON file."""
-    with open("genres.json", "w") as f:
-        json.dump(genres, f, indent=4)
-
 if __name__ == "__main__":
     movie_data = get_all_movie_data()
     cleaned_data = clean_data(movie_data, [
@@ -110,10 +104,19 @@ if __name__ == "__main__":
     "popularity", "release_date", "title", "vote_average", "vote_count"
     ])
     movies, movie_genres= split_data_into_tables(cleaned_data)
-    save_data_to_json(movies, OUTPUT_DIR, OUTPUT_FILE_MOVIES)
-    save_data_to_json(movie_genres, OUTPUT_DIR, OUTPUT_FILE_MG)
-    print(f"Successfully saved top {NUM_MOVIES} movies to {os.path.join(OUTPUT_DIR, OUTPUT_FILE_MOVIES)}")
-
     all_genres = get_all_genres()
-    save_data_to_json(all_genres, OUTPUT_DIR, OUTPUT_FILE_GENRES)
-    print(f"Successfully saved genres to {os.path.join(OUTPUT_DIR, OUTPUT_FILE_GENRES)}")
+
+    db_manager = sqlManager()
+
+    for movie in movies:
+        values = tuple(movie.values())  # Convert values to tuple
+        db_manager.insert_data_to_table("top_movies", values)
+
+    for genre in all_genres:
+        values = (genre["id"], genre["name"])  # Create tuple for genre values
+        db_manager.insert_data_to_table("genres", values)
+
+    for entry in movie_genres:
+        db_manager.insert_data_to_table("genres_movies", tuple(entry.values()))
+
+    print("Data saved to database successfully!")
