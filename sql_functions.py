@@ -18,34 +18,38 @@ class sqlManager:
         self.DB_NAME = os.getenv("POSTGRES_DB")
         self.DB_USER = os.getenv("POSTGRES_USER")
         self.DB_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+        self.DB_PORT = os.getenv("POSTGRES_PORT")
 
         self.create_table(TOP_MOVIES_TABLE_NAME, TOP_MOVIES_TABLE_DEFINITION)
         self.create_table(GENRES_TABLE_NAME, GENRES_TABLE_DEFINITION)
         self.create_table(GENRES_MOVIES_TABLE_NAME, GENRES_MOVIES_TABLE_DEFINITION)
 
     def execute_sql(self, query, values=None, commit=True, fetchmethod=None):
-        conn = connect(host=self.DB_HOST, dbname=self.DB_NAME, user=self.DB_USER, password=self.DB_PASSWORD)
-        cursor = conn.cursor()
-        if values:
-            sql_execute = cursor.execute(query, values)
-        else:
-            sql_execute = cursor.execute(query)
-        fetch_sql = sql_execute
-        if fetchmethod == "fetchone":
-            fetch_sql = sql_execute.fetchone()
-        elif fetchmethod == "fetchall":
-            fetch_sql = sql_execute.fetchall()
-        conn.commit()
-        conn.close()
-        return fetch_sql
+        conn = connect(host=self.DB_HOST, dbname=self.DB_NAME, user=self.DB_USER, password=self.DB_PASSWORD, port=self.DB_PORT)
+        try:
+            cursor = conn.cursor()
+            if values:
+                cursor.execute(query, values)
+            else:
+                cursor.execute(query)
+            if fetchmethod == "fetchone":
+                fetch_sql = cursor.fetchone()
+            elif fetchmethod == "fetchall":
+                fetch_sql = cursor.fetchall()
+            else:
+                fetch_sql = cursor
+            conn.commit()
+            conn.close()
+            return fetch_sql
+        except Exception as e:
+            print("Error executing SQL query:", e)
+            return None
 
 # Function to create a table based on the provided definition
     def create_table(self, table_name, table_definition):
         query = f"CREATE TABLE IF NOT EXISTS {table_definition}"
         self.execute_sql(query)
         print(f"Table '{table_name}' created successfully.")
-
-
 
     def insert_data_to_table(self, table_name, values: tuple):
         """
@@ -59,13 +63,21 @@ class sqlManager:
         """
         self.execute_sql(query, values)
 
-    def check_movie_by_id(self, movie_id):
-        """Checks if a movie with the given ID exists in the database."""
-        query = f"SELECT * FROM top_movies WHERE id = %s"
-        result = self.execute_sql(query, values=(movie_id,), fetchmethod="fetchone")
-        return result is not None
+    def create_view(self):
+        """Creates a view combining movies, genres, and their relationships."""
+        query = """
+            CREATE OR REPLACE VIEW movie_genres_view AS
+            SELECT m.id AS movie_id, m.title, m.original_title, m.vote_average, m.popularity,
+                g.name AS genre_name, EXTRACT(YEAR from m.release_date ) as release_year 
+            FROM top_movies AS m
+            INNER JOIN genres_movies AS gm ON m.id = gm.movie_id
+            INNER JOIN genres AS g ON gm.genre_id = g.id;
+        """
+        self.execute_sql(query)
+        print("View created successfully!")
 
-    def modify_column_value(self, column_name, new_value, id):
-        """Updates a column value for a specific row in a table."""
-        query = f"UPDATE top_movies SET {column_name} = %s WHERE id = %s"
-        self.execute_sql(query, values=(new_value, id))
+    def get_data(self, view):
+        """Fetches all movies with their genres from the view."""
+        query = f"""SELECT * FROM {view}; """
+        data = self.execute_sql(query, fetchmethod="fetchall")
+        return data

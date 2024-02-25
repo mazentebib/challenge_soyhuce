@@ -7,4 +7,5 @@ RUN pip install -r requirements.txt
 
 COPY . .
 
-CMD ["python", "get_data.py"]  # Replace "get_data.py" with your script name
+# Execute get_data.py and then data_viz.py sequentially
+CMD ["bash", "-c", "python get_data.py && python data_viz.py"]
