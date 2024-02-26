@@ -3,3 +3,4 @@ database/pgdata/
 data/
 pgdata
 __pycache__
+movies-db-chart

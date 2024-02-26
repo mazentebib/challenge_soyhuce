@@ -2,8 +2,6 @@ import requests
 import json
 import time
 import os
-import dotenv
-from psycopg2 import connect, Error
 from const import TOP_MOVIES_TABLE_DEFINITION, GENRES_TABLE_DEFINITION, GENRES_MOVIES_TABLE_DEFINITION
 from sql_functions import sqlManager
 

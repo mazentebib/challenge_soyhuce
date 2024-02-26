@@ -2,8 +2,10 @@ version: "3.9"
 
 services:
   movies_db:
-    image: movies_db:latest
-    build: ./database/
+    image: movies_db
+    build:
+      context: .
+      dockerfile: ./database/dockerfile
     ports:
       - "5432:5432"
     environment:
@@ -16,10 +18,12 @@ services:
       - my-network
 
   movie_scraper:
+    image: movie_scraper
     build: .
     volumes:
       - .:/app:rw  # Mount the current directory as the working directory inside the container
-
+    ports:
+      - "8050:8050"
     environment:
       - TMDB_API_KEY=${TMDB_API_KEY}  # Access API key from environment variable
     networks:
