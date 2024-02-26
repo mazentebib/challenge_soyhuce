@@ -1,7 +1,9 @@
+#!/usr/bin/python3
 import os
 import dotenv
 from psycopg2 import connect, Error
-from const import *
+from data_manipulation.const import *
+
 
 # Load environment variables from `.env` file (if applicable)
 dotenv.load_dotenv()

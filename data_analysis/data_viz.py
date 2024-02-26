@@ -1,11 +1,9 @@
 import dash
 from dash import Output, Input,dcc,html
-
-import dash_core_components as dcc
-import dash_html_components as html
 import plotly.express as px
 import pandas as pd
-from sql_functions import sqlManager
+
+from data_manipulation.sql_functions import sqlManager
 
 """ try:
         df['popularity'] = pd.to_numeric(df['popularity'])
@@ -20,6 +18,8 @@ def process_data(df, min_year, max_year, selected_genres=None):
         print("Error: Unable to convert 'popularity' column to numeric.")
     
     if selected_genres:
+        if not isinstance(selected_genres, list):
+            selected_genres = [selected_genres]
         df = df[df['genre_name'].isin(selected_genres)]
 
     genre_counts = (
@@ -45,6 +45,8 @@ def top_movies(df, min_year, max_year, selected_genres=None):
     filtered_df = df[(df['release_year'] >= min_year) & (df['release_year'] <= max_year)]
     
     if selected_genres:
+        if not isinstance(selected_genres, list):
+            selected_genres = [selected_genres]
         filtered_df = filtered_df[filtered_df['genre_name'].isin(selected_genres)]
 
     # Sort the DataFrame by popularity in descending order
@@ -78,13 +80,14 @@ app.layout = html.Div(children=[
         value=[min_year, max_year],
         marks={str(min_year): str(min_year), str(max_year): str(max_year)}
     ),
-    dcc.Dropdown(
-        id='genre-dropdown',
-        options=[{'label': genre, 'value': genre} for genre in df['genre_name'].unique()],
-        value="Drama",
-        multi=True,
-        placeholder="Select Genres"
-    ),
+dcc.Dropdown(
+    id='genre-dropdown',
+    options=[{'label': genre, 'value': genre} for genre in df['genre_name'].unique()],
+    value="Drama",  # Set the default selected genre to "Drama"
+    multi=True,
+    placeholder="Select Genres"
+)
+,
     dcc.Graph(
         id="pie-chart"
     ),
@@ -111,6 +114,8 @@ def update_chart_and_total(year_range, selected_genres):
     # Update total movies for the selected range and genres
     filtered_df = df[(df['release_year'] >= min_year) & (df['release_year'] <= max_year)]
     if selected_genres:
+        if not isinstance(selected_genres, list):
+            selected_genres = [selected_genres]
         filtered_df = filtered_df[filtered_df['genre_name'].isin(selected_genres)]
     total_movies = filtered_df['movie_id'].nunique()
 
@@ -152,9 +157,9 @@ def update_chart_and_total(year_range, selected_genres):
             }
         ],
         "layout": {
-            "title": f"Top 10 Movies by Popularity ({min_year} - {max_year})" if not selected_genres else f"Top 10 Movies by Popularity ({min_year} - {max_year}) for {', '.join(selected_genres)}",
+            "title": f"Most Popular Movies ({min_year} - {max_year})" if not selected_genres else f"Most Popular Movies ({min_year} - {max_year}) for {', '.join(selected_genres)}",
             "xaxis": {"title": "Popularity"},
-            "yaxis": {"title": "Movie Title"},
+            "yaxis": {"title": ""},
             "margin": {"l": 150},
             "barmode": "stack"  # Ensure all bars are displayed without overlap
 

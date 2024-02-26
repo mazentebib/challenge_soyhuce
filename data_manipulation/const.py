@@ -1,3 +1,7 @@
+"""
+CONSTANTS PROJECT
+"""
+
 TOP_MOVIES_TABLE_NAME = "top_movies"
 TOP_MOVIES_TABLE_DEFINITION = """
 top_movies (

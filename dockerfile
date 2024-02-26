@@ -10,5 +10,7 @@ COPY . .
 # Expose port 8050 to the outside world
 EXPOSE 8050
 
+ENV PYTHONPATH='.'
+
 # Execute get_data.py and then data_viz.py sequentially
-CMD ["bash", "-c", "python get_data.py && python data_viz.py"]
+CMD ["bash", "-c", " python data_manipulation/get_data.py && python data_analysis/data_viz.py"]

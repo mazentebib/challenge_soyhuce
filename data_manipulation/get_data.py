@@ -2,8 +2,8 @@ import requests
 import json
 import time
 import os
-from const import TOP_MOVIES_TABLE_DEFINITION, GENRES_TABLE_DEFINITION, GENRES_MOVIES_TABLE_DEFINITION
-from sql_functions import sqlManager
+from data_manipulation.const import TOP_MOVIES_TABLE_DEFINITION, GENRES_TABLE_DEFINITION, GENRES_MOVIES_TABLE_DEFINITION
+from data_manipulation.sql_functions import sqlManager
 
 # Replace with your actual TMDB API key
 API_KEY = os.getenv("TMDB_API_KEY")
