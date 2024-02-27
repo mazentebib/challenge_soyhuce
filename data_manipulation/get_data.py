@@ -2,7 +2,14 @@ import requests
 import json
 import time
 import os
-from data_manipulation.const import TOP_MOVIES_TABLE_DEFINITION, GENRES_TABLE_DEFINITION, GENRES_MOVIES_TABLE_DEFINITION
+import os 
+import sys
+
+current_directory = os.getcwd()
+parent_directory = os.path.dirname(current_directory)
+class_directory = os.path.join(parent_directory, 'challenge_soyhuce')
+sys.path.append(class_directory)
+from data_manipulation.const import *
 from data_manipulation.sql_functions import sqlManager
 
 # Replace with your actual TMDB API key
@@ -96,25 +103,35 @@ def get_all_genres():
         return []
 
 if __name__ == "__main__":
+    print("Fetching top rated movies from TMDB API...")
     movie_data = get_all_movie_data()
+    print("Cleaning movie data...")
     cleaned_data = clean_data(movie_data, [
-    "id","genre_ids", "original_language", "original_title", "overview",
-    "popularity", "release_date", "title", "vote_average", "vote_count"
+        "id","genre_ids", "original_language", "original_title", "overview",
+        "popularity", "release_date", "title", "vote_average", "vote_count"
     ])
-    movies, movie_genres= split_data_into_tables(cleaned_data)
+    print("Splitting data into tables...")
+    movies, movie_genres = split_data_into_tables(cleaned_data)
+    print("Fetching genre data from TMDB API...")
     all_genres = get_all_genres()
 
     db_manager = sqlManager()
 
-    for movie in movies:
-        values = tuple(movie.values())  # Convert values to tuple
-        db_manager.insert_data_to_table("top_movies", values)
+    print("Creating tables in the database...")
+    db_manager.create_table(TOP_MOVIES_TABLE_NAME, TOP_MOVIES_TABLE_DEFINITION)
+    db_manager.create_table(GENRES_TABLE_NAME, GENRES_TABLE_DEFINITION)
+    db_manager.create_table(GENRES_MOVIES_TABLE_NAME, GENRES_MOVIES_TABLE_DEFINITION)
 
-    for genre in all_genres:
-        values = (genre["id"], genre["name"])  # Create tuple for genre values
-        db_manager.insert_data_to_table("genres", values)
+    print("Inserting movie data into the database...")
+    movies_values = [tuple(movie.values()) for movie in movies]
+    db_manager.insert_data_to_table("top_movies", movies_values)
 
-    for entry in movie_genres:
-        db_manager.insert_data_to_table("genres_movies", tuple(entry.values()))
+    print("Inserting genre data into the database...")
+    genres_values = [(genre["id"], genre["name"]) for genre in all_genres]
+    db_manager.insert_data_to_table("genres", genres_values)
+
+    print("Inserting movie-genre mapping data into the database...")
+    movie_genres_values = [tuple(entry.values()) for entry in movie_genres]
+    db_manager.insert_data_to_table("genres_movies", movie_genres_values)
 
     print("Data saved to database successfully!")

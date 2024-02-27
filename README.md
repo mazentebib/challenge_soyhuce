@@ -8,7 +8,7 @@ To run the project, make sure you have Docker and Docker Compose installed on yo
 
 1. **Clone Repository**: Clone this repository to your local machine.
 
-2. **Set Up Environment Variables**: Create a `.env` file in the root directory of the project and set the following environment variables:
+2. **Set Up Environment Variables**: Before proceeding, make sure you have your own TMDb API key. You can obtain one by [creating an account](https://www.themoviedb.org/signup) on TMDb and generating an API key from the [API settings page](https://www.themoviedb.org/settings/api). Once you have your API key, create a `.env` file in the root directory of the project and set the following environment variables:
     ```plaintext
     POSTGRES_DB=movie_db
     POSTGRES_USER=admin
@@ -68,3 +68,5 @@ The project consists of two Docker services:
 ## Notes
 - Make sure to replace placeholders in the `.env` file with your actual database and API credentials.
 - The scraper container depends on the database container, so ensure the database container is up and running before starting the scraper container.
+
+Access the dashboard at [http://localhost:8050/](http://localhost:8050/).

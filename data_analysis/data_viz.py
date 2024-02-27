@@ -2,7 +2,6 @@ import dash
 from dash import Output, Input,dcc,html
 import plotly.express as px
 import pandas as pd
-
 from data_manipulation.sql_functions import sqlManager
 
 """ try:
@@ -61,7 +60,7 @@ manager = sqlManager()
 
 # Create the view if it doesn't exist
 manager.create_view()
-movies = manager.get_data("movie_genres_view")
+movies = manager.get_data_from_table("movie_genres_view")
 
 df = pd.DataFrame(movies, columns=["movie_id", "title", "original_title", "vote_average", "popularity", "genre_name", "release_year"])
 

@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import os
 import dotenv
-from psycopg2 import connect, Error
+from psycopg2 import connect
 from data_manipulation.const import *
 
 
@@ -22,9 +22,7 @@ class sqlManager:
         self.DB_PASSWORD = os.getenv("POSTGRES_PASSWORD")
         self.DB_PORT = os.getenv("POSTGRES_PORT")
 
-        self.create_table(TOP_MOVIES_TABLE_NAME, TOP_MOVIES_TABLE_DEFINITION)
-        self.create_table(GENRES_TABLE_NAME, GENRES_TABLE_DEFINITION)
-        self.create_table(GENRES_MOVIES_TABLE_NAME, GENRES_MOVIES_TABLE_DEFINITION)
+
 
     def execute_sql(self, query, values=None, commit=True, fetchmethod=None):
         conn = connect(host=self.DB_HOST, dbname=self.DB_NAME, user=self.DB_USER, password=self.DB_PASSWORD, port=self.DB_PORT)
@@ -53,7 +51,7 @@ class sqlManager:
         self.execute_sql(query)
         print(f"Table '{table_name}' created successfully.")
 
-    def insert_data_to_table(self, table_name, values: tuple):
+    def insert_item_to_table(self, table_name, values: tuple):
         """
         Inserts a new item into the specified SQL table.
         """
@@ -65,20 +63,47 @@ class sqlManager:
         """
         self.execute_sql(query, values)
 
+    def insert_data_to_table(self, table_name, values_list):
+        """
+        Inserts multiple items into the specified SQL table.
+        """
+        try:
+            conn = connect(host=self.DB_HOST, dbname=self.DB_NAME, user=self.DB_USER, password=self.DB_PASSWORD, port=self.DB_PORT)
+            cursor = conn.cursor()
+            placeholders = ', '.join(['%s'] * len(values_list[0]))
+            query = f"""
+                INSERT INTO {table_name} 
+                VALUES ({placeholders})
+                ON CONFLICT DO NOTHING;
+            """
+            cursor.executemany(query, values_list)
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            print("Error executing SQL query:", e)
+
+
     def create_view(self):
         """Creates a view combining movies, genres, and their relationships."""
-        query = """
-            CREATE OR REPLACE VIEW movie_genres_view AS
-            SELECT m.id AS movie_id, m.title, m.original_title, m.vote_average, m.popularity,
-                g.name AS genre_name, EXTRACT(YEAR from m.release_date ) as release_year 
-            FROM top_movies AS m
-            INNER JOIN genres_movies AS gm ON m.id = gm.movie_id
-            INNER JOIN genres AS g ON gm.genre_id = g.id;
-        """
-        self.execute_sql(query)
-        print("View created successfully!")
+        # Check if the view already exists
+        view_exists_query = "SELECT EXISTS (SELECT 1 FROM information_schema.views WHERE table_name = 'movie_genres_view')"
+        view_exists = self.execute_sql(view_exists_query, fetchmethod="fetchone")
 
-    def get_data(self, view):
+        # If the view doesn't exist, create it
+        if not view_exists or (view_exists and not view_exists[0]):
+            query = """
+                CREATE OR REPLACE VIEW movie_genres_view AS
+                SELECT m.id AS movie_id, m.title, m.original_title, m.vote_average, m.popularity,
+                    g.name AS genre_name, EXTRACT(YEAR from m.release_date ) as release_year 
+                FROM top_movies AS m
+                INNER JOIN genres_movies AS gm ON m.id = gm.movie_id
+                INNER JOIN genres AS g ON gm.genre_id = g.id;
+            """
+            self.execute_sql(query)
+            print("View created successfully!")
+        
+
+    def get_data_from_table(self, view):
         """Fetches all movies with their genres from the view."""
         query = f"""SELECT * FROM {view}; """
         data = self.execute_sql(query, fetchmethod="fetchall")
